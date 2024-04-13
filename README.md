@@ -18,7 +18,11 @@ La asignatura contiene las siguientes propiedades:
         - Path - string (la ubicación del archivo en la estructura de folders)
         - Permisos - una bitflag representando si se puede leer y/o modificar por el alumno con código.
         - Contenido - string (el contenido del archivo)
-4. Acciones - lista de objetos `Accion`
+4. Pruebas - lista de objetos `Prueba`
+    - Una prueba es un conjunto de acciones, o pasos. Si todos los asserts dentro de una prueba se logran, esa prueba se considerará pasada.
+    - Nombre - string (un nombre legible, a mostrarse en la interfaz)
+    - Acciones - lista de tipo `Accion`
+4. `Accion` - Acciones
     - Las acciones serán pasos individuales a correr con el programa. Similar a los unit tests, se puede hacer interfaz con el programa, sea llamando funciones, mandando texto a la consola mediante `stdin` o leyendo el `stdout`. Encadenando estas 'acciones' permitirá que las pruebas puedan ser muy personalizables.
     - `TipoAccion` - tipos de acciones
         - `stdin` - lens mandará el texto especificado al stdin.
@@ -26,4 +30,4 @@ La asignatura contiene las siguientes propiedades:
     - `TipoAssert` - tipos de assert
         - `stdout` - se leerá una línea de stdout, y se comparará con una salida predeterminada.
         - `func` - se llamará una función del programa con los parámetros especificados y se comparará la salida con una especificada.
-        - `process` - Se ejecutará un programa en la shell, y se verificará que el código de salida es `0`. 
+        - `process` - Se ejecutará un programa en la shell, y se verificará que el código de salida es `0`. Se puede usar para crear pruebas basadas en código.
