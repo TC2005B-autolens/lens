@@ -2,6 +2,9 @@
 
 lens se encarga de calificar y analizar las entregas de tareas de código. Presenta un API para generar tareas, calificar entregas y obtener los resultados.
 
+## Kits
+Cada lenguaje de programación requiere diferentes pasos para la ejecución. Algunos son interpretados, otros compilados, y las herramientas para correr pruebas, descargar dependencias y administrar versiones son diferentes. Por ello, cada lenguaje requiere de implementación específica en el sistema. La colección de librerías, código y la imagen de Docker requerida para cada lenguaje se llamará colectivamente un *kit*. Existirá exactamente un *kit* por lenguaje de programación, sea Python, C++, Java, etc.
+
 ## Formatos JSON
 Mediante un request de API (URL completo por decidir), se puede generar una tarea (lo cual lo hace el profesor), con una lista de pruebas a correr al código, archivos requeridos para la asignatura, etcétera.
 ### Asignatura
