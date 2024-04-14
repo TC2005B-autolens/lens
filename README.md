@@ -5,6 +5,20 @@ lens se encarga de calificar y analizar las entregas de tareas de código. Prese
 ## Kits
 Cada lenguaje de programación requiere diferentes pasos para la ejecución. Algunos son interpretados, otros compilados, y las herramientas para correr pruebas, descargar dependencias y administrar versiones son diferentes. Por ello, cada lenguaje requiere de implementación específica en el sistema. La colección de librerías, código y la imagen de Docker requerida para cada lenguaje se llamará colectivamente un *kit*. Existirá exactamente un *kit* por lenguaje de programación, sea Python, C++, Java, etc.
 
+## Overview
+Cuando el programa recibe una asignatura (assignment) nueva:
+1. Crea objeto asignatura en la DB (Redis)
+    - El objeto contiene información sobre la asignatura, los archivos, y los permisos.
+    - UUID único
+2. Crear archivos temp de la asignatura.
+    - Los archivos se crearán en disco en un folder temporal, el cual se copiará/montará a la imagen de docker.
+
+Cuando el programa recibe una entrega (submission) nueva:
+1. Crea tarea en Redis
+2. Copiar archivos nuevos / versión de estudiante al folder temp
+3. Generar dockerfile que copie los archivos al contenedor (docker run --rm)
+4. Leer los resultados y subir resultados a Redis
+
 ## Formatos JSON
 Mediante un request de API (URL completo por decidir), se puede generar una tarea (lo cual lo hace el profesor), con una lista de pruebas a correr al código, archivos requeridos para la asignatura, etcétera.
 ### Asignatura
