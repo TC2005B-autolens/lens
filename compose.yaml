@@ -10,10 +10,5 @@ services:
       - redis
     ports:
       - "3000:3000"
-    develop:
-      watch:
-        - action: rebuild
-          path: package.json
-        - action: sync+restart
-          path: src
-          target: /usr/src/app/src
+    environment:
+      - NODE_ENV=production
