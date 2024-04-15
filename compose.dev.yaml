@@ -1,9 +1,13 @@
 services:
+  redis:
+    image: "redis/redis-stack"
+    ports:
+      - "6379:6379"
+      - "8001:8001"
   api:
     command: bun dev
     build:
-      context: .
-      target: prerelease
+      target: dev
     develop:
         watch:
           - action: rebuild

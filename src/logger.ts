@@ -1,7 +1,7 @@
 import httpino from 'pino-http';
 import pino from 'pino';
 
-const prod = process.env.NODE_ENV === 'production'
+const prod = process.env.NODE_ENV === 'production';
 const logLevel = prod ? 'info' : 'debug';
 
 const transportOptions = prod ? {} : {
