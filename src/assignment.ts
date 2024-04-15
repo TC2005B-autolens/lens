@@ -1,4 +1,7 @@
 import express from 'express';
+import { logger } from './logger';
+import redis from './redis';
+import { nanoid } from 'nanoid';
 
 /**
  * Assignment
@@ -43,5 +46,31 @@ export interface Action {
 }
 
 const assignments = express.Router();
+
+assignments.post('/', (req, res) => {
+    let data = req.body;
+    let id = nanoid();
+    // TODO: validate data using JSON schema
+    redis.json.set(`assignment:${id}`, '$', data);
+    logger.debug('Created new assignment');
+    res.status(201).send({
+        status: 201,
+        message: 'Created',
+        id: id
+    });
+});
+
+assignments.get('/:id', async (req, res) => {
+    let id = req.params.id;
+    const data = await redis.json.get(`assignment:${id}`);
+    if (data) {
+        res.send(data);
+    } else {
+        res.status(404).send({
+            status: 404,
+            message: 'Not Found'
+        });
+    }
+});
 
 export default assignments;

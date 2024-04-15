@@ -13,7 +13,8 @@ services:
       - redis
     ports:
       - "3000:3000"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    # volumes:
+    #   - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379

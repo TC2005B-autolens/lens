@@ -23,6 +23,7 @@
     "cors": "^2.8.5",
     "crockford-base32": "^2.0.0",
     "express": "^4.19.2",
+    "nanoid": "^5.0.7",
     "pino": "^8.20.0",
     "pino-http": "^9.0.0",
     "redis": "^4.6.13",

@@ -1,9 +1,9 @@
 import express from 'express';
-import redis from 'redis';
 import cors from 'cors';
 import { httpLogger, logger } from './logger';
 import assignments from './assignment';
 import errorHandler from './errorHandler';
+import redis from './redis';
 
 const app = express();
 const api = express.Router();
@@ -20,6 +20,12 @@ app.get('/ping', (_, res) => {
     res.send('pong');
 });
 
+app.use((_, res) => {
+    res.status(404).send({
+        status: 404,
+        message: 'Not Found'
+    });
+});
 app.use(errorHandler);
 
 const server = app.listen(port, () => {
@@ -35,4 +41,5 @@ process.on('SIGTERM', () => {
     server.close(() => {
         logger.debug('Express server closed');
     });
+    redis.quit();
 });
