@@ -5,6 +5,9 @@ lens se encarga de calificar y analizar las entregas de tareas de código. Prese
 ## Kits
 Cada lenguaje de programación requiere diferentes pasos para la ejecución. Algunos son interpretados, otros compilados, y las herramientas para correr pruebas, descargar dependencias y administrar versiones son diferentes. Por ello, cada lenguaje requiere de implementación específica en el sistema. La colección de librerías, código y la imagen de Docker requerida para cada lenguaje se llamará colectivamente un *kit*. Existirá exactamente un *kit* por lenguaje de programación, sea Python, C++, Java, etc.
 
+Cada kit contiene un programa que convierte de la especificación JSON a código. Dependiendo del lenguaje
+este proceso ocurrirá en la etapa de compilación (para lenguajes compilados) o ejecución (para lenguajes interpretados)
+
 ## Overview
 Cuando el programa recibe una asignatura (assignment) nueva:
 1. Crea objeto asignatura en la DB (Redis)
