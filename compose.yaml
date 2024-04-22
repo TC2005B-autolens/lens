@@ -1,20 +1,26 @@
-version: '3'
-
 services:
   redis:
     image: "redis/redis-stack-server"
+  # HELP: está aislado de contenedores nuevos creados con docker run?
+  socat:
+    image: alpine/socat
+    command: tcp-listen:2375,fork,reuseaddr unix-connect:/var/run/docker.sock
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
   api:
     build:
       context: .
       target: prod
-    command: bun start
+    command: npm start
     init: true
     depends_on:
       - redis
+      - socat
     ports:
       - "3000:3000"
-    # volumes:
-    #   - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - NODE_ENV=production
       - REDIS_URL=redis://redis:6379
+      - DOCKER_HOST=socat
+      - DOCKER_PORT=2375

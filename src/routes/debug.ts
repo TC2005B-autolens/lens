@@ -1,4 +1,6 @@
+import createHttpError from "http-errors";
 import redis from "../redis";
+import docker from "../docker";
 import type { APIRoute, APIRouter } from "../routes";
 
 const promiseRejection: APIRoute = {
@@ -16,9 +18,26 @@ const flushRedis: APIRoute = {
     }
 }
 
+const dockerInfo: APIRoute = {
+    path: '/docker/info',
+    get: async (_, res) => {
+        const info = await docker.info();
+        res.status(200).json(info);
+    }
+}
+
 const debugRoute: APIRouter = {
     path: '/debug',
-    routes: [promiseRejection, flushRedis]
+    routes: [promiseRejection, flushRedis, dockerInfo],
+    middlewares: [
+        (_, res, next) => {
+            if (process.env.NODE_ENV === 'production') {
+                next(new createHttpError.NotFound());
+            } else {
+                next();
+            }
+        }
+    ]
 }
 
 export default debugRoute;

@@ -14,9 +14,11 @@ export interface APIRoute {
 export interface APIRouter {
     routes: APIRoute[];
     path: string;
+    middlewares?: RequestHandler[];
 }
 
-export function router(routes: APIRoute[]): Router {
+export function router(r: APIRouter): Router {
+    const routes = r.routes;
     const router = Router();
     routes.forEach((route) => {
         const { path, get, post, put, patch, delete: del } = route;
@@ -29,5 +31,10 @@ export function router(routes: APIRoute[]): Router {
             next(new createHttpError.MethodNotAllowed());
         });
     });
+    if (r.middlewares) {
+        r.middlewares.forEach((middleware) => {
+            router.use(middleware);
+        });   
+    }
     return router;
 }

@@ -18,8 +18,8 @@ Cuando el programa recibe una asignatura (assignment) nueva:
 
 Cuando el programa recibe una entrega (submission) nueva:
 1. Crea tarea en Redis
-2. Copiar archivos nuevos / versión de estudiante al folder temp
-3. Generar dockerfile que copie los archivos al contenedor (docker run --rm)
+2. Crea imagen de Docker usando `docker image import` con los archivos de la tarea/entrega
+3. Correr dockerfile de kit, que copia los archivos de la imagen via ARG, compila si es necesario, y corre el comando especificado por ENTRYPOINT
 4. Leer los resultados y subir resultados a Redis
 
 ## Formatos JSON
@@ -41,13 +41,18 @@ La asignatura contiene las siguientes propiedades:
 4. Pruebas - lista de objetos `Prueba`
     - Una prueba es un conjunto de acciones, o pasos. Si todos los asserts dentro de una prueba se logran, esa prueba se considerará pasada.
     - Nombre - string (un nombre legible, a mostrarse en la interfaz)
-    - Acciones - lista de tipo `Accion`
-4. `Accion` - Acciones
-    - Las acciones serán pasos individuales a correr con el programa. Similar a los unit tests, se puede hacer interfaz con el programa, sea llamando funciones, mandando texto a la consola mediante `stdin` o leyendo el `stdout`. Encadenando estas 'acciones' permitirá que las pruebas puedan ser muy personalizables.
-    - `TipoAccion` - tipos de acciones
-        - `stdin` - lens mandará el texto especificado al stdin.
-        - `assert` - Una prueba. Existen varios tipos de assertions. Tenerlo como un tipo general nos ayuda a listar todas las pruebas en la interfaz y mostrarle al usuario qué pruebas fallaron.
-    - `TipoAssert` - tipos de assert
-        - `stdout` - se leerá una línea de stdout, y se comparará con una salida predeterminada.
-        - `func` - se llamará una función del programa con los parámetros especificados y se comparará la salida con una especificada.
-        - `process` - Se ejecutará un programa en la shell, y se verificará que el código de salida es `0`. Se puede usar para crear pruebas basadas en código.
+    - Tipo de prueba: 'IO', 'function', 'custom'
+        - IO: mandar stdin y revisar stdout
+        - function: llamar una función con ciertos parámetros y revisar valor de retorno
+        - custom: hacer unit tests con la librería de pruebas usada por el kit
+
+
+## Kit
+Cada kit deberá implementar funcionalidad básica:
+### Ejecución
+Se deberá tener la capacidad de tomar código y ejecutarlo, recibiendo datos de stdin y leyendo de stdout.
+
+### Breadcrumbs (delayed)
+El kit deberá poder proporcionar información sobre las funciones y clases en los archivos del alumno.
+
+

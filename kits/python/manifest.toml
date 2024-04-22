@@ -1,0 +1,14 @@
+# Ando averiguando cómo se debería ver este archivo
+
+manifest_version = "1"
+
+# assignment spec processing:
+# For each test a docker container is run
+# The image contains all test cases, however, each case is run individually per container
+# in parallel. 
+# The kit "builds" a dockerfile from the assignment spec and the test cases, and lens should
+# run it using docker build -f [dockerfile] .
+
+[kit]
+version = "1"
+language = "python"

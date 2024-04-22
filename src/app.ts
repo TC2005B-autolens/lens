@@ -4,31 +4,21 @@ import cors from 'cors';
 import { httpLogger, logger } from './logger';
 import assignments from './routes/assignment';
 import debuggingRoutes from './routes/debug';
-import errorHandler from './middlewares/error-handler';
+import { errorHandler, zodErrorHandler } from './middlewares/error-handler';
 import redis from './redis';
 import { router } from './routes';
-import createHttpError from 'http-errors';
 
 const app = express();
 const api = express.Router();
-const debugRouter = router(debuggingRoutes.routes);
 const port = 3000;
 
-debugRouter.use((_, res, next) => {
-    if (process.env.NODE_ENV === 'production') {
-        next(new createHttpError.NotFound());
-    } else {
-        next();
-    }
-});
-
 api.use(cors());
-api.use(assignments.path, router(assignments.routes));
+api.use(assignments.path, router(assignments));
 
 app.use(httpLogger);
 app.use(express.json());
 app.use('/api/v1', api);
-app.use(debuggingRoutes.path, debugRouter);
+app.use(debuggingRoutes.path, router(debuggingRoutes));
 
 app.get('/ping', (_, res) => {
     res.send('pong');
@@ -43,6 +33,8 @@ app.use((_, res) => {
         message: 'The requested resource was not found'
     });
 });
+
+app.use(zodErrorHandler);
 app.use(errorHandler);
 
 const server = app.listen(port, () => {
