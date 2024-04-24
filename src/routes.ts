@@ -1,4 +1,4 @@
-import type { Application, IRouter, RequestHandler } from "express";
+import type { RequestHandler } from "express";
 import { Router } from "express";
 import createHttpError from "http-errors";
 
@@ -15,11 +15,12 @@ export interface APIRouter {
     routes: APIRoute[];
     path: string;
     middlewares?: RequestHandler[];
+    handlers?: Record<string, RequestHandler[]>;
 }
 
 export function router(r: APIRouter): Router {
     const routes = r.routes;
-    const router = Router();
+    const router = Router({mergeParams: true});
     routes.forEach((route) => {
         const { path, get, post, put, patch, delete: del } = route;
         if (get) router.get(path, get);
@@ -34,7 +35,14 @@ export function router(r: APIRouter): Router {
     if (r.middlewares) {
         r.middlewares.forEach((middleware) => {
             router.use(middleware);
-        });   
+        });
+    }
+    if (r.handlers) {
+        Object.entries(r.handlers).forEach(([path, handlers]) => {
+            handlers.forEach((handler) => {
+                router.use(path, handler);
+            });
+        });
     }
     return router;
 }

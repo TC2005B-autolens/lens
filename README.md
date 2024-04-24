@@ -56,3 +56,21 @@ Se deberá tener la capacidad de tomar código y ejecutarlo, recibiendo datos de
 El kit deberá poder proporcionar información sobre las funciones y clases en los archivos del alumno.
 
 
+## TODO
+
+Prioridades:
+- Funcionalidad Básica (prototipo)
+    - Bundling de los archivos de una tarea (tar)
+    - Dockerfile para Python
+    - Interpretador de assignment.json de Python
+
+Secundarios:
+- Refactorizar código a Model-View-Controller
+    - Folders: models, controllers, routes, middlewares
+    - Tapiduck o similar
+        - middleware that provides context for resources e.g assignment data for assignment, etc.
+        - it should also verify data with zod
+- Crear cola de trabajos para procesamiento de entregas
+    - Para pasar los archivos al contenedor el servidor tiene que juntar y comprimirlos desde memoria
+    - esto toma tiempo y podría bloquear el hilo principal si hay mucha demanda
+

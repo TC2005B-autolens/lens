@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { File } from "./common";
+import { CodeFile, refineFileList } from "./common";
 
-export const FilesSchema = z.array(File.extend({
+export const AssignmentFiles = z.array(CodeFile.extend({
     read: z.boolean(),
     write: z.boolean(),
-    main: z.boolean(),
-})).nonempty().superRefine((data, ctx) => {
+    main: z.boolean().default(false),
+})).superRefine(refineFileList).superRefine((data, ctx) => {
     const mainFiles = data.filter((file: any) => file.main);
     if (mainFiles.length !== 1) {
         ctx.addIssue({
@@ -13,29 +13,21 @@ export const FilesSchema = z.array(File.extend({
             message: 'There must be exactly one main file',
         });
     }
-
-    const filePaths = data.map((file: any) => file.path);
-    if (new Set(filePaths).size !== filePaths.length) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Paths must be unique',
-        });
-    }
 });
 
-export const BaseTestSchema = z.object({
+export const BaseTest = z.object({
     id: z.string(),
     type: z.string(),
     title: z.string()
 })
 
-export const TestSchema = z.discriminatedUnion('type', [
-    BaseTestSchema.extend({
+export const Test = z.discriminatedUnion('type', [
+    BaseTest.extend({
         type: z.literal("io"),
         in: z.array(z.string()),
         out: z.string()
     }),
-    BaseTestSchema.extend({
+    BaseTest.extend({
         type: z.literal("function"),
         function: z.string(),
         // HELP: cómo expeso los parámetros de la función?
@@ -43,18 +35,18 @@ export const TestSchema = z.discriminatedUnion('type', [
         // HELP: cómo expeso el tipo de retorno de la función?
         out: z.string(),
     }),
-    BaseTestSchema.extend({
+    BaseTest.extend({
         type: z.literal("unit"),
         contents: z.string()
     })
 ]);
 
-export const AssignmentSchema = z.object({
+export const Assignment = z.object({
     language: z.string(),
-    files: FilesSchema,
-    tests: z.array(TestSchema).nonempty(),
+    files: AssignmentFiles,
+    tests: z.array(Test).nonempty(),
 });
 
-export type Files = z.infer<typeof FilesSchema>;
-export type Test = z.infer<typeof TestSchema>;
-export type Assignment = z.infer<typeof AssignmentSchema>;
+export type AssignmentFiles = z.infer<typeof AssignmentFiles>;
+export type Test = z.infer<typeof Test>;
+export type Assignment = z.infer<typeof Assignment>;

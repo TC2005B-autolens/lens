@@ -12,6 +12,7 @@ const transportOptions = prod ? {} : {
 
 export const httpLogger = httpino({
     level: logLevel,
+    useLevel: 'trace',
     ...transportOptions
 });
 

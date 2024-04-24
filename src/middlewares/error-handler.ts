@@ -11,7 +11,7 @@ export function zodErrorHandler(err: ZodError, req: Request, res: Response, next
         return;
     }
     res.status(400).json({
-        message: err.message,
+        message: 'Invalid Request Body',
         errors: err.errors
     });
 }

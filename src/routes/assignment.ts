@@ -4,18 +4,16 @@ import redis from '../redis';
 import { nanoid } from 'nanoid';
 import type { APIRoute, APIRouter } from '../routes';
 import createHttpError from 'http-errors';
-import { AssignmentSchema } from '../models/assignment';
+import { Assignment } from '../models/assignment';
 import { NoBody } from '../models/common';
 
 const createAssignment: APIRoute = {
     path: '/',
     post: async (req, res, next) => {
-        const data = AssignmentSchema.parse(req.body);
+        const data = Assignment.parse(req.body);
         const id = nanoid();
-        // TODO: validate data using JSON schema
         await redis.json.set(`assignment:${id}`, '$', data, { NX: true });
-        logger.debug('Created new assignment');
-        res.status(201).json({id, ...data});
+        res.status(201).json({ id, ...data });
     }
 }
 
@@ -35,7 +33,7 @@ const getAssignment: APIRoute = {
         let id = req.params.id;
         const data = await redis.json.del(`assignment:${id}`);
         if (data) {
-            res.status(204);
+            res.status(204).send();
         } else {
             next(new createHttpError.NotFound())
         }
@@ -44,7 +42,7 @@ const getAssignment: APIRoute = {
 
 const assignmentRoute: APIRouter = {
     path: '/assignments',
-    routes: [createAssignment, getAssignment]
+    routes: [createAssignment, getAssignment],
 }
 
 export default assignmentRoute;

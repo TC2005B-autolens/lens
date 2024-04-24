@@ -3,6 +3,8 @@ import 'express-async-errors';
 import cors from 'cors';
 import { httpLogger, logger } from './logger';
 import assignments from './routes/assignment';
+import submissions from './routes/submission';
+import jobs from './routes/job';
 import debuggingRoutes from './routes/debug';
 import { errorHandler, zodErrorHandler } from './middlewares/error-handler';
 import redis from './redis';
@@ -14,6 +16,8 @@ const port = 3000;
 
 api.use(cors());
 api.use(assignments.path, router(assignments));
+api.use(submissions.path, router(submissions));
+api.use(jobs.path, router(jobs));
 
 app.use(httpLogger);
 app.use(express.json());

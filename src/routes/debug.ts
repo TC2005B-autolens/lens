@@ -2,6 +2,8 @@ import createHttpError from "http-errors";
 import redis from "../redis";
 import docker from "../docker";
 import type { APIRoute, APIRouter } from "../routes";
+import { z } from "zod";
+import { refineFileList, CodeFile } from "../models/common";
 
 const promiseRejection: APIRoute = {
     path: '/error/promise-reject',
@@ -26,9 +28,17 @@ const dockerInfo: APIRoute = {
     }
 }
 
+const testFilesValidation: APIRoute = {
+    path: '/test/files-validation',
+    post: async (req, res) => {
+        const data = z.array(CodeFile).superRefine(refineFileList).parse(req.body);
+        res.status(200).json(data);
+    }
+}
+
 const debugRoute: APIRouter = {
     path: '/debug',
-    routes: [promiseRejection, flushRedis, dockerInfo],
+    routes: [promiseRejection, flushRedis, dockerInfo, testFilesValidation],
     middlewares: [
         (_, res, next) => {
             if (process.env.NODE_ENV === 'production') {
