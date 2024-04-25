@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { HttpError } from 'http-errors';
-import { logger } from '../logger';
+import { logger } from '../environment/logger';
 import { ZodError } from 'zod';
 
 const prod = process.env.NODE_ENV === 'production';
@@ -16,7 +16,6 @@ export function zodErrorHandler(err: ZodError, req: Request, res: Response, next
     });
 }
 
-// TODO: Handle Zod body parse errors
 export function errorHandler(err: Error | HttpError, req: Request, res: Response, next: NextFunction) {
     const status = (err instanceof HttpError) ? err.statusCode : 500;
     const isServerError = status >= 500; 

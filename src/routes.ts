@@ -1,48 +1,26 @@
-import type { RequestHandler } from "express";
-import { Router } from "express";
-import createHttpError from "http-errors";
+import express from 'express';
 
-export interface APIRoute {
-    path: string;
-    get?: RequestHandler;
-    post?: RequestHandler;
-    put?: RequestHandler;
-    patch?: RequestHandler;
-    delete?: RequestHandler;
-}
+import * as assignments from './controllers/assignment';
+import * as submissions from './controllers/submission';
+import * as jobs from './controllers/job';
 
-export interface APIRouter {
-    routes: APIRoute[];
-    path: string;
-    middlewares?: RequestHandler[];
-    handlers?: Record<string, RequestHandler[]>;
-}
+const router = express.Router({ mergeParams: true });
 
-export function router(r: APIRouter): Router {
-    const routes = r.routes;
-    const router = Router({mergeParams: true});
-    routes.forEach((route) => {
-        const { path, get, post, put, patch, delete: del } = route;
-        if (get) router.get(path, get);
-        if (post) router.post(path, post);
-        if (put) router.put(path, put);
-        if (patch) router.patch(path, patch);
-        if (del) router.delete(path, del);
-        router.all(path, (_req, _res, next) => {
-            next(new createHttpError.MethodNotAllowed());
-        });
-    });
-    if (r.middlewares) {
-        r.middlewares.forEach((middleware) => {
-            router.use(middleware);
-        });
-    }
-    if (r.handlers) {
-        Object.entries(r.handlers).forEach(([path, handlers]) => {
-            handlers.forEach((handler) => {
-                router.use(path, handler);
-            });
-        });
-    }
-    return router;
-}
+// Submissions
+const submissionsRouter = express.Router({ mergeParams: true });
+submissionsRouter.post('/submissions', submissions.create);
+submissionsRouter.use('/submissions/:submission_id', submissions.provide);
+submissionsRouter.get('/submissions/:submission_id', submissions.get);
+submissionsRouter.delete('/submissions/:submission_id', submissions.del);
+
+// Assignments
+router.post('/assignments', assignments.create);
+router.use('/assignments/:assignment_id', assignments.provide);
+router.get('/assignments/:assignment_id', assignments.get);
+router.delete('/assignments/:assignment_id', assignments.del);
+router.use('/assignments/:assignment_id', submissionsRouter);
+
+// Jobs
+router.get('/jobs/:jobid/:tarid.tar.gz', jobs.get_tar);
+
+export default router;

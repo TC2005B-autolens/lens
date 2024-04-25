@@ -1,9 +1,15 @@
-ARG source_url
-ARG source_tar
-
-FROM alpine:3.19 as builder
+FROM alpine:3.19 as base
+RUN adduser -D lens
+RUN adduser -D student
 WORKDIR /usr/src/lenskit
-ADD ${source_url}${source_tar} .
-RUN tar -xzf ${source_tar}.tar.gz
+RUN chown lens:lens /usr/src/lenskit
+USER lens
 
-ENTRYPOINT ["cat", "assignment.json"]
+FROM base as builder
+ARG source_url
+ARG source_file
+ADD --chown=lens ${source_url}/${source_file} .
+RUN tar -xzf ${source_file}
+
+USER student
+ENTRYPOINT ["cat", "job.json"]

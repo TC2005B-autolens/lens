@@ -2,7 +2,6 @@ import { z } from "zod";
 import { CodeFile, refineFileList } from "./common";
 
 export const AssignmentFiles = z.array(CodeFile.extend({
-    read: z.boolean(),
     write: z.boolean(),
     main: z.boolean().default(false),
 })).superRefine(refineFileList).superRefine((data, ctx) => {

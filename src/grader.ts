@@ -1,13 +1,14 @@
-import { Job } from "./models/job";
-import { Submission } from "./models/submission";
 import { EventEmitter } from "events";
-import { z } from 'zod';
-import redis from "./redis";
-import { NanoID } from "./models/common";
-import { Assignment, AssignmentFiles } from "./models/assignment";
 import { nanoid } from "nanoid";
 import tar from "tar-stream";
-import { logger } from "./logger";
+import { z } from 'zod';
+import docker from "./environment/docker";
+import { logger } from "./environment/logger";
+import redis from "./environment/redis";
+import { Assignment } from "./models/assignment";
+import { NanoID } from "./models/common";
+import { Job } from "./models/job";
+import { Submission } from "./models/submission";
 
 const FullSubmission = Submission.extend({
     id: NanoID
@@ -38,7 +39,7 @@ class GradingJob {
             if (aFile) {
                 return { ...aFile, content: sFile.content };
             } else {
-                return { ...sFile, main: false, read: true, write: true };
+                return { ...sFile, main: false, write: true };
             }
         });
         const job: Job = {
@@ -52,15 +53,16 @@ class GradingJob {
         return job;
     }
 
-    static async compressFiles(files: AssignmentFiles): Promise<Uint8Array> {
+    static async compressFiles(job: Job): Promise<Uint8Array> {
+        const files = job.files;
         const pack = tar.pack();
         for (let f of files) {
-            let mode = 0o600;
-            if (f.read) mode |= 0o044;
+            let mode = 0o644;
             if (f.write) mode |= 0o022;
 
-            pack.entry({ name: f.path, mode }, atob(f.content));
+            pack.entry({ name: `source/${f.path}`, mode }, atob(f.content));
         }
+        pack.entry( { name: 'job.json', mode: 600 }, JSON.stringify(job));
         pack.finalize();
 
         return new Promise((resolve, reject) => {
@@ -77,10 +79,23 @@ class GradingJob {
     static async processJob(job: Job) {
         await redis.json.set(`job:${job.id}`, '$', job, { NX: true });
         const fileId = nanoid();
-        const compressed = await GradingJob.compressFiles(job.files);
+        const compressed = await GradingJob.compressFiles(job);
         logger.debug(`job ${job.id}: compressed ${compressed.length} bytes\n    - id: ${fileId}`);
         await redis.set(`job:${job.id}:tar`, Buffer.from(compressed), { EX: 300 });
         await redis.set(`job:${job.id}:tar:id`, fileId, { EX: 300 });
+        // TODO: the URL should not reference localhost
+        const buildStream = await docker.buildImage(`.lens/kits/${job.language}.tar.gz`, {
+            t: `lenskit-job-${job.language}:${job.id}`,
+            buildargs: {
+                source_url: `http://localhost:3000/api/v1/jobs/${job.id}`,
+                source_file: `${fileId}.tar.gz`
+            },
+        });
+        await new Promise((resolve, reject) => {
+            docker.modem.followProgress(buildStream, (err, res) => err ? reject(err) : resolve(res), data => {
+                logger.debug(data);
+            });
+        });
     }
 }
 

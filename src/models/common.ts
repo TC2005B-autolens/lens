@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { BRAND, z } from "zod";
 import path from "path";
-import { logger } from "../logger";
+import { logger } from "../environment/logger";
 
 const INVALID_FILE_REGEX = /[<>:"/\\|?*\u0000-\u001F]/g;
 const BASE64_REGEX = /^[a-zA-Z0-9+/]+={0,2}$/;
@@ -30,7 +30,7 @@ export const CodeFile = z.object({
     content: Base64String,
 });
 
-export function refineFileList<T extends z.infer<typeof CodeFile>>(files: T[], ctx: z.RefinementCtx) {
+export function refineFileList<T extends CodeFile>(files: T[], ctx: z.RefinementCtx) {
     if (files.length === 0) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'There must exist at least one file' });
     }
@@ -51,5 +51,5 @@ export function refineFileList<T extends z.infer<typeof CodeFile>>(files: T[], c
     });
 }
 
-export type File = z.infer<typeof CodeFile>;
+export type CodeFile = z.infer<typeof CodeFile>;
 export type NoBody = z.infer<typeof NoBody>;

@@ -12,6 +12,8 @@ services:
         watch:
           - action: rebuild
             path: package.json
+          - action: rebuild
+            path: kits
           - action: sync
             path: src
             target: /usr/src/app/src
