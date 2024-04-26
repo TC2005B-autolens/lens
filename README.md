@@ -46,6 +46,19 @@ La asignatura contiene las siguientes propiedades:
         - function: llamar una función con ciertos parámetros y revisar valor de retorno
         - custom: hacer unit tests con la librería de pruebas usada por el kit
 
+### Resultadios
+Existirá un resultado por prueba:
+1. ID - string
+    - El ID de la prueba a la que se refiere
+2. Resultado: una opción entre `pass` | `fail` | `error`
+    - `error` está reservado para errores internos con el autograder y no representan un fallo del lado del estudiante
+3. Message: En caso de un error se mostrará un mensaje:
+    - error:? El error, si uno ocurrió.
+        - message: El mensaje del error.
+        - type?: El tipo del error, o código.
+        - detail?: traceback u otro tipo de información adicional.
+    - expected?: opcional. El valor que debería proporcionar el programa con la entrada designada.
+    - actual?: opcional. El valor real que se obtuvo.
 
 ## Kit
 Cada kit deberá implementar funcionalidad básica:

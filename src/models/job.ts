@@ -7,7 +7,7 @@ export const Job = Assignment.extend({
     id: NanoID,
     assignment_id: NanoID,
     submission_id: NanoID,
-    status: z.enum(['pending', 'running', 'completed']),
+    status: z.enum(['pending', 'running', 'completed', 'failed']),
 });
 
 export type Job = z.infer<typeof Job>;

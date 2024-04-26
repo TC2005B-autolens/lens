@@ -60,9 +60,9 @@ class GradingJob {
             let mode = 0o644;
             if (f.write) mode |= 0o022;
 
-            pack.entry({ name: `source/${f.path}`, mode }, atob(f.content));
+            pack.entry({ name: `${f.path}`, mode }, atob(f.content));
         }
-        pack.entry( { name: 'job.json', mode: 600 }, JSON.stringify(job));
+        pack.entry( { name: 'job.json', mode: 0o600 }, JSON.stringify(job));
         pack.finalize();
 
         return new Promise((resolve, reject) => {
@@ -76,26 +76,45 @@ class GradingJob {
         });
     }
 
+    static processBuildStream(data: any) {
+        if (data.stream) {
+            process.stdout.write(data.stream);
+        } else {
+            logger.debug(data)
+        }
+    }
+
     static async processJob(job: Job) {
         await redis.json.set(`job:${job.id}`, '$', job, { NX: true });
         const fileId = nanoid();
         const compressed = await GradingJob.compressFiles(job);
         logger.debug(`job ${job.id}: compressed ${compressed.length} bytes\n    - id: ${fileId}`);
-        await redis.set(`job:${job.id}:tar`, Buffer.from(compressed), { EX: 300 });
-        await redis.set(`job:${job.id}:tar:id`, fileId, { EX: 300 });
+        await redis.set(`job:${job.id}:tar`, Buffer.from(compressed), /* { EX: 300 } */);
+        await redis.set(`job:${job.id}:tar:id`, fileId, /* { EX: 300 } */);
         // TODO: the URL should not reference localhost
+        const imageTag = `lenskit-job-${job.language}:${job.id}`;
         const buildStream = await docker.buildImage(`.lens/kits/${job.language}.tar.gz`, {
-            t: `lenskit-job-${job.language}:${job.id}`,
+            t: imageTag,
             buildargs: {
                 source_url: `http://localhost:3000/api/v1/jobs/${job.id}`,
                 source_file: `${fileId}.tar.gz`
             },
         });
-        await new Promise((resolve, reject) => {
-            docker.modem.followProgress(buildStream, (err, res) => err ? reject(err) : resolve(res), data => {
-                logger.debug(data);
+        logger.debug(`job ${job.id}: building image...`);
+        try {
+            await new Promise((resolve, reject) => {
+                docker.modem.followProgress(
+                    buildStream,
+                    (err, res) => err ? reject(err) : resolve(res),
+                    (logger.level !== 'trace') ? undefined : GradingJob.processBuildStream
+                );
             });
-        });
+        } catch (e) {
+            logger.error(`job ${job.id}: error building image: ${e}`);
+            await redis.json.set(`job:${job.id}`, '$.status', 'failed');
+            return;
+        }
+        logger.info(`job ${job.id}: image built, id: ${imageTag}`);
     }
 }
 

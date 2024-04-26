@@ -6,7 +6,7 @@ EXPOSE 3000
 FROM debian as lenskit-pack
 WORKDIR /usr/src/lenskits
 COPY kits .
-RUN find . -maxdepth 1 -mindepth 1 -type d -exec tar czvf {}.tar.gz -C {} . --strip-components=1 --remove-files \;
+RUN find . -maxdepth 1 -mindepth 1 -type d -exec tar --exclude-ignore=.dockerignore -czvf {}.tar.gz -C {} . --strip-components=1 --remove-files \;
 
 FROM base-install as dev-install
 RUN --mount=type=bind,target=package.json,source=package.json \

@@ -10,7 +10,6 @@ export const get_tar = async (req: Request, res: Response, next: NextFunction) =
         redis.commandOptions({ returnBuffers: true }),
         `job:${jobid}:tar`
     );
-    logger.debug(`job ${jobid}: tar data: ${data ? data.length : 'null'}`);
     const id = await redis.get(`job:${jobid}:tar:id`);
     if (data && id === tarid) {
         res.setHeader('Content-Type', 'application/x-tar');
