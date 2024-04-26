@@ -105,7 +105,13 @@ class GradingJob {
             await new Promise((resolve, reject) => {
                 docker.modem.followProgress(
                     buildStream,
-                    (err, res) => err ? reject(err) : resolve(res),
+                    (err, res) => {
+                        if (err !== null || res.length == 0 || res[res.length - 1].error) {
+                            reject(err || res[res.length - 1].error);
+                            return;
+                        }
+                        resolve(res);
+                    },
                     (logger.level !== 'trace') ? undefined : GradingJob.processBuildStream
                 );
             });
@@ -115,6 +121,7 @@ class GradingJob {
             return;
         }
         logger.info(`job ${job.id}: image built, id: ${imageTag}`);
+        
     }
 }
 

@@ -12,3 +12,11 @@ manifest_version = "1"
 [kit]
 version = "1"
 language = "python"
+
+[[tests]]
+type = "func"
+cmd = "dist/${test.id}"
+
+[[tests]]
+type = "io"
+cmd = "submission/${test.mainFile}"

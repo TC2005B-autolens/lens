@@ -67,6 +67,7 @@ class FunctionTest:
         return test_result
     
 def main():
+    sys.path.append('./')
     test = FunctionTest()
     output = test.execute()
     print(json.dumps(output))

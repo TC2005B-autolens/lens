@@ -1,5 +1,6 @@
 import json
 import ast
+import os
 
 from .templater import FillFuncTemplate
 
@@ -31,7 +32,9 @@ def handle_func(test):
 
     templater = FillFuncTemplate(ast_replacements)
     tree = ast.fix_missing_locations(templater.generic_visit(tree))
-    with open(f'{test_id}.py', 'w') as f:
+    output_file = f'dist/{test_id}.py'
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    with open(output_file, 'x') as f:
         f.write(ast.unparse(tree))
 
 if __name__ == "__main__":
