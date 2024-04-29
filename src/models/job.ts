@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Assignment } from './assignment';
+import { Assignment, BaseAssignment } from './assignment';
 import { NanoID } from './common';
 import { TestResult } from './test';
 
@@ -32,7 +32,7 @@ export const BaseJob = z.object({
 export const Job = BaseJob.extend({
     status: JobStatus,
     results: z.record(z.string(), TestResult).optional(),
-}).merge(Assignment);
+}).merge(BaseAssignment);
 
 export type BaseJob = z.infer<typeof BaseJob>;
 export type Job = z.infer<typeof Job>;

@@ -15,7 +15,7 @@ export const AssignmentFiles = z.array(CodeFile.extend({
     }
 });
 
-export const Assignment = z.object({
+export const BaseAssignment = z.object({
     id: z.string().optional(),
     language: z.string(),
     files: AssignmentFiles,
@@ -28,7 +28,22 @@ export const Assignment = z.object({
             });
         }
     }),
+})
+
+export const Assignment = BaseAssignment.superRefine((data, ctx) => {
+    for (let test of data.tests) {
+        if (test.type === 'function') {
+            const file = data.files.find(f => f.path === test.file);
+            if (!file) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: `Test ${test.id} references non-existent file ${test.file}`,
+                });
+            }
+        }
+    }
 });
 
 export type AssignmentFiles = z.infer<typeof AssignmentFiles>;
 export type Assignment = z.infer<typeof Assignment>;
+export type BaseAssignment = z.infer<typeof BaseAssignment>;

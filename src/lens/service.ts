@@ -8,6 +8,7 @@ import kits from './kit';
 import type { Submission } from '../models/submission';
 import type { Assignment, AssignmentFiles } from '../models/assignment';
 import { nanoid } from 'nanoid';
+import { Container } from './container';
 
 function generateArchive(job: LensJob): Promise<Uint8Array> {
     const files = job.files;
@@ -32,9 +33,10 @@ function generateArchive(job: LensJob): Promise<Uint8Array> {
     });
 }
 
+
+
 async function processJob(job: Job<LensJob>) {
     // TODO: clean up, organize logs and use streams
-    logger.debug(`job ${job.id}: status is ${job.data.status.status}`);
     await redis.json.set(`job:${job.data.id}`, '$', job.data, { NX: true });
 
     const kit = kits.get(job.data.language);
@@ -45,81 +47,35 @@ async function processJob(job: Job<LensJob>) {
     }
 
     const archive = await generateArchive(job.data);
-    logger.debug(`job ${job.id}: compressed ${archive.length} bytes`);
-    
+    logger.trace(`job ${job.id}: compressed ${archive.length} bytes`);
     await redis.set(`job:${job.id}:tar`, Buffer.from(archive), { EX: 300 });
 
-    const imageTag = `lenskit-job-${job.data.language}:${job.data.id}`;
-    const buildStream = await docker.buildImage({ context: `kits/${job.data.language}/`, src: ['Dockerfile']}, {
-        t: imageTag,
-        buildargs: {
-            source_url: `http://localhost:3000/api/v1/jobs/${job.id}`,
-            source_file: `archive.tar.gz`,
-            base_image: `${job.data.language}-1`,
-        },
-        rm: true,
-        networkmode: 'lens_isolated'
-    });
-    logger.debug(`job ${job.id}: building image...`);
-    try {
-        await new Promise((resolve, reject) => {
-            docker.modem.followProgress(
-                buildStream,
-                (err, res) => {
-                    if (err !== null || res.length == 0 || res[res.length - 1].error) {
-                        reject({
-                            error: err || res[res.length - 1].error,
-                            stream: res
-                        });
-                        return;
-                    }
-                    resolve(res);
-                }
-            );
-        });
-    } catch (e) {
-        const info = (e as any);
-        logger.error(`job ${job.id}: error building image: ${info.error}`);
-        // logger.error(info);
-        // await redis.json.set(`job:${job.id}`, '$.status', 'failed');
-        return;
-    }
-    logger.debug(`job ${job.id}: image built, id: ${imageTag}`);
-    const containers = job.data.tests.map((test) => {
-        const ctx = kits.generateContext(kit, job.data, test.id);
-        const cmdTemplate = kit.tests.find(t => t.type === test.type)?.cmd;
-        if (!cmdTemplate) {
-            logger.error(`job ${job.id}: test ${test.id} type ${test.type} not found in kit`);
-            throw new Error(`unsupported test type: ${test.type}`);
-        }
-        const cmd = kits.fillCommands(cmdTemplate, ctx);
-        logger.debug(`job ${job.id}: running test ${test.id} with command ${cmd}`);
-        return docker.run(imageTag, cmd, process.stdout, {
-            HostConfig: {
-                Binds: [ 'lens_api_sock:/var/run/lens:ro' ],
-                NetworkMode: 'lens_isolated'
-            }
-        }).then((out) => {
-            logger.debug(`job ${job.id}: test ${test.id} completed`);
-            return out;
-        });
+    const container = new Container(job.data);
+    const buildStream = await container.build();
+    logger.trace(`job ${job.id}: build started`);
+    await container.buildFinished();
+
+    const instances = job.data.tests.map(test => {
+        logger.trace(`job ${job.id}: running test ${test.id}`);
+        return container.runTest(test);
     });
 
     try {
-        const results = await Promise.all(containers);
+        // TODO: handle non-zero exit codes
+        // the first object of the result contains the exit code
+        const results = await Promise.all(instances);
         logger.debug(`job ${job.id}: all tests completed`);
-        logger.debug(results[0][0]);
+        logger.trace(results[0][0]);
         // await redis.json.set(`job:${job.id}`, '$.status', 'completed');
         logger.debug(`job ${job.id}: cleaning up`);
-        results.forEach(async ([stream, container]) => {
+        results.forEach(async ([output, container]) => {
             await container.remove();
-            logger.debug(`job ${job.id}: removed container ${container.id}`);
+            logger.trace(`job ${job.id}: removed container ${container.id}`);
         });
-        await docker.getImage(imageTag).remove({ force: true });
-        logger.debug(`job ${job.id}: removed image ${imageTag}`);
+        await docker.getImage(container.imageTag).remove({ force: true });
+        logger.trace(`job ${job.id}: removed image ${container.imageTag}`);
     } catch (e) {
         logger.error(`job ${job.id}: error running tests: ${e}`);
-        // await redis.json.set(`job:${job.id}`, '$.status', 'failed');
     }
 }
 

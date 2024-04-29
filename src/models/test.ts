@@ -14,6 +14,7 @@ export const Test = z.discriminatedUnion('type', [
     }),
     BaseTest.extend({
         type: z.literal('function'),
+        file: z.string(),
         function: z.string(),
         params: z.array(z.string()),
         out: z.string(),
