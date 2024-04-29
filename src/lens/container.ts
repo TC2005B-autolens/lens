@@ -3,7 +3,9 @@ import docker from "../environment/docker";
 import { logger } from "../environment/logger";
 import type { KitManifest } from "./kit";
 import kits from './kit';
-import type { Test } from "../models/test";
+import type { Test, TestResult } from "../models/test";
+import { saveResult } from "../controllers/job";
+import { once } from 'events';
 
 export class Container {
     job: Job;
@@ -36,44 +38,55 @@ export class Container {
     
     async buildFinished() {
         if (this.buildStream === undefined) return;
-        return await new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             if (this.buildStream === undefined) return reject("Build stream is undefined");
-            docker.modem.followProgress(this.buildStream, this.handleBuildFinish);
+            logger.trace(`job ${this.job.id}: waiting for build to complete`);
+            docker.modem.followProgress(this.buildStream, (err, res) => {
+                if (err !== null || res.length == 0 || res[res.length - 1].error) {
+                    reject({
+                        error: err || res[res.length - 1].error,
+                        stream: res
+                    });
+                }
+                resolve(res);
+            }, data => {
+                if (data.error) {
+                    reject(data);
+                }
+
+                if (logger.level !== 'trace') return;
+                if (data.stream) {
+                    process.stdout.write(data.stream);
+                } else {
+                    logger.trace(data);
+                }
+            });
+        }).then((result) => {
+            logger.trace(`job ${this.job.id}: build completed`);
+            delete this.buildStream;
+            return result;
         });
     }
 
-    async runTest(test: Test) {
+    async runTest(test: Test, stream?: NodeJS.WritableStream) {
+        if (this.job.id === undefined) throw new Error("Job ID is undefined");
         const ctx = kits.generateContext(this.kit, this.job, test.id);
         const cmdTemplate = this.kit.tests.find(t => t.type === test.type)?.cmd;
         if (!cmdTemplate) throw new Error(`unsupported test type: ${test.type}`);
         const cmd = kits.fillCommands(cmdTemplate, ctx);
         logger.trace(`job ${this.job.id}: running test ${test.id} with command ${cmd}`);
-        if (test.type === 'function') {
-            return this.runFunctionTest(test, cmd);
-        }
-        throw new Error(`unsupported test type: ${test.type}`);
-    }
-
-    async runFunctionTest(test: Test, cmd: string[]) {
-        return docker.run(this.imageTag, cmd, process.stdout, {
+        return docker.run(this.imageTag, cmd, stream ?? process.stdout, {
             HostConfig: {
                 Binds: [ 'lens_api_sock:/var/run/lens:ro' ],
-                NetworkMode: 'lens_isolated'
-            }
+                NetworkMode: 'lens_isolated',
+                AutoRemove: true
+            },
+            Labels: {
+                'com.autolens.lens.job': this.job.id,
+            },
         }).then((out) => {
             logger.trace(`job ${this.job.id}: test ${test.id} completed`);
             return out;
         });
-    }
-
-    private handleBuildFinish(err: Error | null, res: any) {
-        delete this.buildStream;
-        if (err !== null || res.length == 0 || res[res.length - 1].error) {
-            return {
-                error: err || res[res.length - 1].error,
-                stream: res
-            };
-        }
-        return res;
     }
 }

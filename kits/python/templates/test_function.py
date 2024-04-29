@@ -77,14 +77,8 @@ def main():
 
     test = FunctionTest()
     output = test.execute()
-    print(json.dumps(output))
-    with unixsocket.Session() as sesh:
-        base_url = 'http+unix://%2Fvar%2Frun%2Flens%2Flens.sock'
-        res = sesh.post(f'{base_url}/jobs/{test.AST_JOB_ID}/result?test={test.AST_TEST_NAME}', json=output)
-        if (res.status_code >= 400):
-            raise Exception(f"Error sending result for test '{test.AST_TEST_NAME}': {res.text}")
-        else:
-            print(f"Sent result for test '{test.AST_TEST_NAME}'")
+    if unixsocket.send_result(output, test.AST_JOB_ID, test.AST_TEST_NAME):
+        print(f'Sent result for test {test.AST_TEST_NAME}')
 
 if __name__ == '__main__':
     main()

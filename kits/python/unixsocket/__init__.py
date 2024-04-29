@@ -80,3 +80,11 @@ class Session(requests.Session):
     def __init__(self, url_scheme=DEFAULT_SCHEME, *args, **kwargs):
         super(Session, self).__init__(*args, **kwargs)
         self.mount(url_scheme, UnixAdapter())
+
+def send_result(result, job_id, test_name):
+    with Session() as sesh:
+        base_url = 'http+unix://%2Fvar%2Frun%2Flens%2Flens.sock'
+        url = f'{base_url}/jobs/{job_id}/result?test={test_name}'
+        res = sesh.post(url, json=result)
+        res.raise_for_status()
+        return True

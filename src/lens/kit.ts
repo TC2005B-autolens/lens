@@ -20,7 +20,8 @@ export type KitManifest = z.infer<typeof KitManifest>;
 export const KitTestCmdContext = z.object({
     job: BaseJob,
     test: Test,
-    kit: KitManifest.shape.kit
+    kit: KitManifest.shape.kit,
+    mainFile: z.string()
 });
 export type KitTestCmdContext = z.infer<typeof KitTestCmdContext>;
 
@@ -55,6 +56,7 @@ class kitProvider {
             job: BaseJob.parse(job),
             test: test,
             kit: kit.kit,
+            mainFile: job.files.find(f => f.main)?.path as string
         }
     }
 

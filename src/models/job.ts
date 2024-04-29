@@ -36,3 +36,13 @@ export const Job = BaseJob.extend({
 
 export type BaseJob = z.infer<typeof BaseJob>;
 export type Job = z.infer<typeof Job>;
+
+export interface JobProgress {
+    status: 'pending' | 'building' | 'testing' | 'completed' | 'failed';
+    substage?: string;
+    test?: {
+        name: string;
+        status: 'pass' | 'fail' | 'running' | 'error';
+    }
+    error?: string;
+}

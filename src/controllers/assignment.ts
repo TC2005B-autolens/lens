@@ -37,5 +37,3 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
     await redis.json.set(`assignment:${id}`, '$', data, { NX: true });
     res.status(201).json({ id, ...data });
 }
-
-

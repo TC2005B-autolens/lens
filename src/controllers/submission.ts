@@ -36,7 +36,7 @@ export const create: RequestHandler = async (req: Request, res: Response, next: 
         const lensJob = lensService.create({ ...submission, id }, { ...assignment, id });
         await redis.json.set(`submission:${id}`, '$', submission, { NX: true });
         const job = await lensService.dispatch(lensJob);
-        res.status(201).json({ id, lensJob });
+        res.status(201).json({ id, job: lensJob });
     } catch (e) {
         if (!(e instanceof lensService.invalidSubmissionError)) throw e;
         throw new createHttpError.BadRequest(e.message);

@@ -47,14 +47,18 @@ export const get = async (req: Request, res: Response) => {
 }
 
 export const postResult = async (req: Request, res: Response) => {
-    const testId = req.query.test;
+    const testId = req.query.test as string;
     if (!testId) {
         throw new createHttpError.BadRequest('test query parameter is required');
     }
     const job = req.job as Job;
     const result = TestResult.parse(req.body);
     logger.debug(`job ${job.id} test ${testId} result: ${result.result}`);
-    await redis.json.set(`job:${job.id}`, `$.results`, {}, { NX: true });
-    await redis.json.set(`job:${job.id}`, `$.results.${testId}`, result);
+    await saveResult(job, testId, result);
     res.status(201).send();
+}
+
+export const saveResult = async (job: Job, test: string, result: TestResult) => {
+    await redis.json.set(`job:${job.id}`, `$.results`, {}, { NX: true });
+    await redis.json.set(`job:${job.id}`, `$.results.${test}`, result);
 }

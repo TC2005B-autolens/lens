@@ -19,4 +19,4 @@ cmd = ["dist/${test.id}.py"]
 
 [[tests]]
 type = "io"
-cmd = ["submission/${test.mainFile}"]
+cmd = ["dist/${test.id}.py"]
