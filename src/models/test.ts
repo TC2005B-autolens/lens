@@ -31,7 +31,11 @@ export const TestResult = z.object({
         message: z.string(),
         type: z.string().optional(),
         detail: z.string().optional(),
-    }).optional()
+        expected: z.coerce.string().optional(),
+        actual: z.coerce.string().optional()
+    }).optional().refine(data => {
+        return (data?.expected && data?.actual) || (!data?.expected && !data?.actual);
+    })
 });
 
 export type Test = z.infer<typeof Test>;

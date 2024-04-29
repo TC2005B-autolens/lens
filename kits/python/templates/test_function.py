@@ -63,8 +63,11 @@ class FunctionTest:
             test_result["result"] = "pass"
         else:
             test_result["result"] = "fail"
-            test_result["expected"] = self.AST_EXPECTED_OUTPUT
-            test_result["actual"] = result
+            test_result["error"] = {
+                "message": f"Expected output '{self.AST_EXPECTED_OUTPUT}', got '{result}'",
+                "expected": self.AST_EXPECTED_OUTPUT,
+                "actual": result
+            }
         
         return test_result
     
