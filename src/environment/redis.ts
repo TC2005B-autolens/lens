@@ -1,8 +1,13 @@
 import { createClient } from "redis";
 import { logger } from "./logger";
 
+export const connection = {
+    host: process.env.REDIS_HOST ?? 'localhost',
+    port: parseInt(process.env.REDIS_PORT ?? '6379'),
+}
+
 const redis = createClient({
-    url: process.env.REDIS_URL ?? 'redis://localhost:6379'
+    url: `redis://${connection.host}:${connection.port}`,
 });
 
 logger.debug(`Redis URL is ${process.env.REDIS_URL}`);

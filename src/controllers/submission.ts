@@ -4,7 +4,7 @@ import { Submission } from "../models/submission";
 import createHttpError from "http-errors";
 import redis from "../environment/redis";
 import { nanoid } from "nanoid";
-import gradingJob from "../grader";
+import * as lensService from "../lens/service";
 
 declare module "express-serve-static-core" {
     interface Request {
@@ -31,20 +31,16 @@ export const create: RequestHandler = async (req: Request, res: Response, next: 
     const id = nanoid();
     const assignment = req.assignment;
     const submission = Submission.parse(req.body);
-    for (let file of submission.files) {
-        let assignmentFile = assignment.files.find(f => f.path === file.path);
-        if (assignmentFile && !assignmentFile.write) {
-            next(new createHttpError.BadRequest(`File ${file.path} is not allowed to be submitted`));
-        }
+    
+    try {
+        const lensJob = lensService.create({ ...submission, id }, { ...assignment, id });
+        await redis.json.set(`submission:${id}`, '$', submission, { NX: true });
+        const job = await lensService.dispatch(lensJob);
+        res.status(201).json({ id, lensJob });
+    } catch (e) {
+        if (!(e instanceof lensService.invalidSubmissionError)) throw e;
+        throw new createHttpError.BadRequest(e.message);
     }
-    const fullSubmission = { 
-        ...submission,
-        id,
-        assignment: req.params.assignment_id
-    };
-    await redis.json.set(`submission:${id}`, '$', fullSubmission, { NX: true });
-    const job = await gradingJob.dispatch(fullSubmission);
-    res.status(201).json({ id, job });
 }
 
 export const get = async (req: Request, res: Response) => {

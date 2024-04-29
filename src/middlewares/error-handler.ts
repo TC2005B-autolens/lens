@@ -25,7 +25,7 @@ export function errorHandler(err: Error | HttpError, req: Request, res: Response
         message,
         ...data
     };
-    logger.error(`Error while handling ${req.path}: ${message}`);
+    if (isServerError) logger.error(`Error while handling ${req.path}: ${message}`);
     res.status(status).json(output);
     next();
 }

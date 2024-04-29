@@ -10,6 +10,7 @@ class FunctionTest:
     AST_TARGET_FUNCTION = None
     AST_TEST_NAME = None
     AST_EXPECTED_OUTPUT = None
+    AST_JOB_ID = None
     
     def __init__(self):
         assert(self.AST_TARGET_MODULE is not None)
@@ -29,25 +30,26 @@ class FunctionTest:
             self.error = {
                 "type": str(exc_type),
                 "message": str(exc_value),
-                "detail": traceback.format_exception(exc_type, exc_value, exc_traceback)
+                "detail": ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
             }
-        
+            
+        if self.error is not None: return
         if not hasattr(self.module, self.AST_TARGET_FUNCTION):
             raise AttributeError(f"Function {self.AST_TARGET_FUNCTION} not found in module {self.AST_TARGET_MODULE}")
         self.ast_call_target = getattr(self.module, self.AST_TARGET_FUNCTION)
 
     def execute(self):
         try:
-            result = self.ast_call_target()
+            if self.error is None:
+                result = self.ast_call_target()
         except Exception as e:
             print(f"Error executing function {self.AST_TARGET_FUNCTION}: {e}")
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self.error = {
-                "type": str(exc_type),
+                "type": exc_type.__name__,
                 "message": str(exc_value),
-                "detail": traceback.format_exception(exc_type, exc_value, exc_traceback)
+                "detail": ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
             }
-            return None
         
         test_result = {
             "id": self.AST_TEST_NAME,
@@ -68,9 +70,18 @@ class FunctionTest:
     
 def main():
     sys.path.append('./')
+    import unixsocket
+
     test = FunctionTest()
     output = test.execute()
     print(json.dumps(output))
+    with unixsocket.Session() as sesh:
+        base_url = 'http+unix://%2Fvar%2Frun%2Flens%2Flens.sock'
+        res = sesh.post(f'{base_url}/jobs/{test.AST_JOB_ID}/result?test={test.AST_TEST_NAME}', json=output)
+        if (res.status_code >= 400):
+            raise Exception(f"Error sending result for test '{test.AST_TEST_NAME}': {res.text}")
+        else:
+            print(f"Sent result for test '{test.AST_TEST_NAME}'")
 
 if __name__ == '__main__':
     main()

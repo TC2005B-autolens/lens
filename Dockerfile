@@ -24,7 +24,10 @@ RUN rm -r ./node_modules/cpu-features
 
 FROM oven/bun:1.1.4 as run
 WORKDIR /usr/src/app
-USER bun
+RUN useradd -ms /bin/bash lens
+RUN mkdir /var/run/lens
+RUN chown lens:lens /var/run/lens
+USER lens
 COPY . .
 
 FROM run as dev
@@ -34,4 +37,3 @@ COPY --from=lenskit-pack /usr/src/lenskits .lens/kits
 FROM run as prod
 COPY --from=prod-install /tmp/install .
 COPY --from=lenskit-pack /usr/src/lenskits .lens/kits
-

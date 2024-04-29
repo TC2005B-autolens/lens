@@ -5,7 +5,8 @@ import api from './routes';
 import { logger } from './environment/logger';
 import redis from './environment/redis';
 import { errorHandler, zodErrorHandler } from './middlewares/error-handler';
-import createHttpError from 'http-errors';
+import isolatedApp from './isolated_app';
+import fs from 'fs';
 
 const app = express();
 const port = 3000;
@@ -27,6 +28,13 @@ const server = app.listen(port, () => {
     logger.info(`Server is running on port ${port}`);
 });
 
+// More info in isolated_app.ts
+const isolatedServer = isolatedApp.listen('/var/run/lens/lens.sock', () => {
+    logger.info('Opened socket at /var/run/lens/lens.sock');
+    fs.chmodSync('/var/run/lens/lens.sock', 0o744);
+    logger.debug('Changed socket permissions to 744');
+});
+
 server.on('error', (err) => {
     logger.error('Express server error: ', err);
 });
@@ -36,5 +44,8 @@ process.on('SIGTERM', () => {
     server.close(() => {
         logger.debug('Express server closed');
     });
+    isolatedServer.close(() => {
+        logger.debug('Unix socket server closed');
+    })
     redis.quit();
 });

@@ -9,7 +9,6 @@ with open('job.json') as f:
 
 tests = job['tests']
 main_file = next(file for file in job['files'] if file['main'])['path']
-print(f"main file is {main_file}")
 
 def handle_func(test):
     target_func = test['function']
@@ -22,7 +21,8 @@ def handle_func(test):
         'AST_TEST_NAME': test_id,
         # expected output is teacher provided, who already has complete control over the code ran
         # on the container. This is a safe eval.
-        'AST_EXPECTED_OUTPUT': eval(expected_output), 
+        'AST_EXPECTED_OUTPUT': eval(expected_output),
+        'AST_JOB_ID': job['id'],
         'ast_call_target': target_params
     }
 

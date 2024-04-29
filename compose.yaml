@@ -1,6 +1,8 @@
 services:
   redis:
     image: "redis/redis-stack-server"
+    networks:
+      - default
   # HELP: está aislado de contenedores nuevos creados con docker run?
   socat:
     image: alpine/socat
@@ -8,19 +10,37 @@ services:
     user: root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - default
   api:
     build:
       context: .
       target: prod
-    command: npm start
+    user: lens
+    command: bun start
     init: true
     depends_on:
       - redis
       - socat
+    networks:
+      - default
+      - isolated
     ports:
       - "3000:3000"
+    volumes:
+      - api_sock:/var/run/lens
     environment:
       - NODE_ENV=production
-      - REDIS_URL=redis://redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       - DOCKER_HOST=socat
       - DOCKER_PORT=2375
+
+networks:
+  isolated:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"
+
+volumes:
+  api_sock:

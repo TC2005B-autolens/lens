@@ -1,0 +1,8 @@
+FROM python:3-slim as base
+RUN pip install urllib3 requests
+RUN useradd -ms /bin/bash lens
+RUN useradd -ms /bin/bash student
+WORKDIR /usr/src/lenskit
+RUN chown lens:lens /usr/src/lenskit
+USER lens
+COPY --chown=lens . .

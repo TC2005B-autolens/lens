@@ -73,9 +73,10 @@ El kit deberá poder proporcionar información sobre las funciones y clases en l
 
 Prioridades:
 - Funcionalidad Básica (prototipo)
-    - Bundling de los archivos de una tarea (tar)
-    - Dockerfile para Python
-    - Interpretador de assignment.json de Python
+    - Procesamiento de resultados:
+        - Pasar los resultados del contenedor de la tarea al API
+        - Esto se puede hacer proporcionando autenticación al archivo que califica
+        - la autenticación solo es válida para postear resultados del trabajo
 
 Secundarios:
 - Refactorizar código a Model-View-Controller

@@ -21,6 +21,9 @@ router.delete('/assignments/:assignment_id', assignments.del);
 router.use('/assignments/:assignment_id', submissionsRouter);
 
 // Jobs
-router.get('/jobs/:jobid/:tarid.tar.gz', jobs.get_tar);
+router.get('/jobs/:jobid/archive.tar.gz', jobs.getArchive);
+router.use('/jobs/:jobid', jobs.provide);
+router.get('/jobs/:jobid', jobs.get);
+router.post('/jobs/:jobid/results', jobs.postResult);
 
 export default router;

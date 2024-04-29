@@ -1,6 +1,6 @@
 # Ando averiguando cómo se debería ver este archivo
 
-manifest_version = "1"
+version = "1"
 
 # assignment spec processing:
 # For each test a docker container is run
@@ -14,9 +14,9 @@ version = "1"
 language = "python"
 
 [[tests]]
-type = "func"
-cmd = "dist/${test.id}"
+type = "function"
+cmd = ["dist/${test.id}.py"]
 
 [[tests]]
 type = "io"
-cmd = "submission/${test.mainFile}"
+cmd = ["submission/${test.mainFile}"]

@@ -1,13 +1,38 @@
 import { z } from 'zod';
 import { Assignment } from './assignment';
 import { NanoID } from './common';
+import { TestResult } from './test';
 
-// TODO: consistency: add id field to all models
-export const Job = Assignment.extend({
+export const JobStatus = z.discriminatedUnion('status', [
+    z.object({
+        status: z.literal('pending')
+    }),
+    z.object({
+        status: z.literal('building')
+    }),
+    z.object({
+        status: z.literal('testing'),
+        tests: z.record(z.string(), z.enum(['pass', 'fail', 'running', 'error']))
+    }),
+    z.object({
+        status: z.literal('completed')
+    }),
+    z.object({
+        status: z.literal('failed'),
+        error: z.string()
+    })
+]);
+
+export const BaseJob = z.object({
     id: NanoID,
     assignment_id: NanoID,
     submission_id: NanoID,
-    status: z.enum(['pending', 'running', 'completed', 'failed']),
 });
 
+export const Job = BaseJob.extend({
+    status: JobStatus,
+    results: z.record(z.string(), TestResult).optional(),
+}).merge(Assignment);
+
+export type BaseJob = z.infer<typeof BaseJob>;
 export type Job = z.infer<typeof Job>;
